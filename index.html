@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>GotoWebinar Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+  <script>
+    /********************
+     * API PARAMS
+    *********************/
+    var consumer_key = "s7GJXqeDRsmkK5thWOQENeREeyZwacCp";
+    var consumer_secret = "i0zGsU69nECTUbJW";
+
+    //base64Key is base64 for consumer_key:consumer_secret
+    var base64Key = "czdHSlhxZURSc21rSzV0aFdPUUVOZVJFZXlad2FjQ3A6aTB6R3NVNjluRUNUVWJKVw==";
+    
+    var organizer_key = "42058920285483526";
+    var account_key = "5474065275429106182";
+    var access_token = "nquI6yCFJpPeYN20rS6wcW9pBcusDb3QXnNDDy0gufyQrZPjnBwgEqn2NhWmAO6neuR7fFm3FV8i6JqIuNfj9G79xYE5-BQZ98Kc.t6f6jkliQkhnrPFR6W7fBKjCJUa5pcE-vHFJv49CkC2ZKjZHmBOMtfGFo4i5TJB6TYPPgO6-B-4A8TZEXkwFu6sh9dr_v-yeTlyoNAUShL-FrnAa2pdjOcGzSHT439C5CZKbm8LELsq3BltHRLidTj9VdGE5GvP-aQqvYTYdAc09hhqxjhAwsoGz-zBWWf8Soeyhfru1MuDpBqjQp77zAUvA5DmFwMlsJhx7w8IWe6nqXv0AzvgZ8XlGr7M2t456UJ9gP1lf44wLL9Su_4Vh76wROf79dvtTueJ2VLAj5pO-89qdPA4qrUEf_2yk7jG8XP3qAvnhjOCjaLndqMg0fPCDQWrTRl9XBcpJW6NgjNrRusEeF-B6Xd-iFe4ZmdZY_lhoklnD5dqml9ql2ulQF8MxKAvLqRyJzYP7NU1escFgQ6r-LMbDXDPd1YXukNwT88LvKfXWnkX7To9KeSBA9l663n6nH0GneEz9d6Mb6UdLEknND5oaXmEJ_qrAraTBkdRFS1u5TgXGIqJf8Jt_zWW2q35QkJw2l7mACvEgu9JsCaJAIGr_9zsLLawsF8RrglSA_nv9Zr54QSoWJm44KgUPmcOhjyQ01k1B5ls7LcEkPx_AsYBFfD0Hb3DyAb58KuRnHdcmcK-PrbfQ5_8Monv4Ee62h4zMaixTRNZMfSQi1sRym_n8avrRqp-zvkishfM.zTOiuxaBXkSgaYIG8CZvEd3dSjFX6viYne5WybwvckXY4IjA-QlL38xLi4piqWGu7fKSKzSVQI41hkXSSO2dcSwmVJ-E-OP27Gw8";
+
+    //node js Url
+    var server_base_url = "http://localhost:8000/";
+  </script>
+</head>
+
+<body>
+
+  <div class="jumbotron text-center">
+    <h1>GotoWebinar Example</h1>
+  </div>
+
+
+  <div class="container">
+    <div class="form-group">
+      <button type="button" id="refresh_access_token" class="btn btn-primary" onclick="refreshAccessToken();">Get Access
+        Token</button>
+    </div>
+
+    <div class="form-group">
+      <label for="usr">Organizer Key:</label>
+      <input type="text" class="form-control" id="organizer_key" value="" readonly>
+    </div>
+    <div class="form-group">
+      <label for="usr">Account Key:</label>
+      <input type="text" class="form-control" id="account_key" value="" readonly>
+    </div>
+    <div class="form-group">
+      <label for="usr">Access Token:</label>
+      <textarea class="form-control" rows="5" id="access_token" readonly></textarea>
+    </div>
+  </div>
+
+  <div class="container" id="button_load_webinar" style="padding-top:50px;">
+    <button type="button" id="load_webinars" class="btn btn-primary">Load Webinars</button>
+  </div>
+
+  <div class="container" style="padding-top:50px;text-align: center;" id="loading">
+    <img src="assets/images/loader.gif" width="64px;" height="64px;" />
+  </div>
+
+  <!-- Current Webinar List -->
+  <div class="container" style="padding-top:50px;" id="webinars">
+    <h2>Current Webinar List</h2>
+    <div style="float: right;margin-bottom: 10px;">
+      <button type="button" id="create_new_webinar" class="btn btn-primary" data-toggle="modal"
+        data-target="#myModalCreateWebinar">Create New Webinar</button>
+    </div>
+    <p>Below are the existing webinars:</p>
+    <table class="table table-striped" id="webinarTable">
+      <thead>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- Modal -->
+  <div id="myModalCreateWebinar" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <form name="create_webinar" onsubmit="return createWebinar();">
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Create Webinar</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="usr">Subject:</label>
+              <input type="text" class="form-control" id="subject" value="" required>
+            </div>
+            <div class="form-group">
+              <label for="usr">Description:</label>
+              <input type="text" class="form-control" id="description" value="" required>
+            </div>
+            <div class="form-group">
+              <label for="usr">Webinar Date:</label>
+              <input type="text" class="form-control" id="startTime" value="" required>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-success" id="createWebinarSubmit">Submit</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Modal panelist -->
+  <div id="myModalCreatePanelists" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <form name="create_Panelists" onsubmit="return createPanelist();">
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Create Panelists</h4>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="webinarKey_panelist" id="webinarKey_panelist" value="">
+            <div class="form-group">
+              <label for="usr">Name:</label>
+              <input type="text" class="form-control" id="name_panelist" value="" required>
+            </div>
+            <div class="form-group">
+              <label for="usr">Email:</label>
+              <input type="text" class="form-control" id="email_panelist" value="" required>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-success" id="createPanelistsSubmit">Submit</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="myModalListPanelists" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Manage Panelists</h4>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="webinarKey_panelist_list" id="webinarKey_panelist_list" value="">
+          <div class="container" style="text-align: center;" id="loadingPanelist">
+            <img src="assets/images/loader.gif" width="32px;" height="32px;" />
+          </div>
+          <h2>Current Panelists List</h2>
+          <div style="float: right;margin-bottom: 10px;">
+            <button type="button" id="create_new_Panelists" class="btn btn-primary" data-dismiss="modal"
+              data-toggle="modal" data-target="#myModalCreatePanelists">Create New Panelists</button>
+          </div>
+          <p>Below are the existing Panelists:</p>
+          <table class="table table-striped" id="panelistTable">
+            <thead>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrant -->
+  <div id="myModalCreateRegistrant" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <form name="create_Registrant" onsubmit="return createRegistrant();">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Create Registrant</h4>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="webinarKey_registrant" id="webinarKey_registrant" value="">
+
+            <div class="form-group">
+              <label for="usr">First Name:</label>
+              <input type="text" class="form-control" id="first_name_registrant" value="" required>
+            </div>
+            <div class="form-group">
+              <label for="usr">Last Name:</label>
+              <input type="text" class="form-control" id="last_name_registrant" value="" required>
+            </div>
+            <div class="form-group">
+              <label for="usr">Email:</label>
+              <input type="text" class="form-control" id="email_registrant" value="" required>
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-success" id="createRegistrantSubmit">Submit</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="myModalListRegistrant" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Manage Registrants</h4>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="webinarKey_registrant_list" id="webinarKey_registrant_list" value="">
+          <div class="container" style="text-align: center;" id="loadingRegistrant">
+            <img src="assets/images/loader.gif" width="32px;" height="32px;" />
+          </div>
+          <h2>Current Registrant List</h2>
+          <div style="float: right;margin-bottom: 10px;">
+            <button type="button" id="create_new_Registrant" class="btn btn-primary" data-dismiss="modal"
+              data-toggle="modal" data-target="#myModalCreateRegistrant">Create New Registrant</button>
+          </div>
+          <p>Below are the existing Panelists:</p>
+          <table class="table table-striped" id="registrantTable">
+            <thead>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog" title="Please Note!">
+  </div>
+
+  <script>
+    var datePickerOptions = {
+      changeMonth: true,
+      changeYear: true,
+      dateFormat: 'yy-mm-dd',
+      yearRange: "c:c"
+    }
+
+    $(function () {
+      $("#webinars").hide();
+      $("#startTime").datepicker(datePickerOptions);
+      $('#loading').hide();
+      $('#button_load_webinar').hide();
+    });
+
+    $(document).ready(function () {
+      $("#load_webinars").click(function () {
+        loadWebinars();
+      });
+
+      //delete_webinar    
+      $('#webinarTable').on('click', '.delete_webinar', function () {
+        //data-webinarKey
+        var webinarKey = $(this).data('webinarkey');
+        console.log("delete webinarKey", webinarKey);
+        deleteWebinar(webinarKey);
+      });
+
+      //list_panelists    
+      $('#webinarTable').on('click', '.list_panelists', function () {
+        //data-webinarKey
+        var webinarKey = $(this).data('webinarkey');
+        console.log("list_panelists webinarKey", webinarKey);
+        loadPanelists(webinarKey);
+        $('#webinarKey_panelist').val(webinarKey);
+        $('#webinarKey_panelist_list').val(webinarKey);
+        $('#myModalListPanelists').modal('show');
+      });
+
+      //delete_panelist
+      $('#panelistTable').on('click', '.delete_panelist', function () {
+        //data-webinarKey
+        var panelistId = $(this).data('panelistid');
+        var webinarKey = $('#webinarKey_panelist_list').val();
+        console.log("delete panelistId", panelistId, webinarKey);
+        deletePanelist(panelistId, webinarKey);
+      });
+
+      //list_registrants    
+      $('#webinarTable').on('click', '.list_registrants', function () {
+        //data-webinarKey
+        var webinarKey = $(this).data('webinarkey');
+        console.log("list_registrants webinarKey", webinarKey);
+        loadRegistrants(webinarKey);
+        $('#webinarKey_registrant').val(webinarKey);
+        $('#webinarKey_registrant_list').val(webinarKey);
+        $('#myModalListRegistrant').modal('show');
+      });
+
+      //delete_registrants    
+      $('#registrantTable').on('click', '.delete_registrants', function () {
+        var registrantKey = $(this).data('registrantkey');
+        var webinarKey = $('#webinarKey_registrant_list').val();
+        console.log("delete registrantKey", registrantKey, webinarKey);
+        deleteRegistrant(registrantKey, webinarKey);
+      });
+
+    });
+
+    function getAuthorizeCode(){
+      var url = "https://api.getgo.com/oauth/v2/authorize?client_id="+consumer_key+"&response_type=code";
+      window.open(url,"_blank");
+    }
+
+    function refreshAccessToken() {
+        $("#account_key").val(account_key);
+        $("#organizer_key").val(organizer_key);
+        $("#access_token").val(access_token);
+        
+        if (account_key != "" && organizer_key != "" && access_token != "") {
+          $('#button_load_webinar').show();
+        }          
+      }
+    
+
+    /*********************
+    * Webinars Related 
+    *********************/
+
+    function loadWebinars() {
+
+      $('#loading').show();
+
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        //$( "#dialog" ).html("Please click Refresh Token to fetch needed tokens");
+        //$( "#dialog" ).dialog();
+        refreshAccessToken();
+      }
+
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/accounts/" + account_key + "/webinars?page=0&size=20&fromTime=2020-01-01T00:00:00Z&toTime=2020-12-31T23:59:59Z";
+
+      var url = server_base_url + "get_webinars";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url
+        },
+        success: function (data) {
+          console.log("data ", data);
+          var webinarsList = data._embedded.webinars;
+          console.log("webinarsList length", webinarsList.length);
+
+          //delete existing ones
+          $("#webinarTable tr").remove();
+
+          var $trhead = $('<tr>').append('<th width="20%">Subject</th><th width="20%">Description</th><th width="10%">Start Time</th><th width="10%">End Time</th><th width="10%">Registration Url</th><th width="30%">Manage</th></tr>').appendTo('#webinarTable');
+
+          $.each(webinarsList, function (i, item) {
+
+            var webinarKey = item.webinarKey;
+            if (webinarKey != "7484667427956073741") {
+              var link = '<a href="' + item.registrationUrl + '" target="_blank">Click Here</a>';
+              var startTime = "";
+              var endTime = "";
+              var timeList = item.times;
+              $.each(timeList, function (j, time) {
+                startTime = time.startTime;
+                endTime = time.endTime;
+              });
+
+              var manageLinks = '<a href="javascript:void(0);" data-webinarkey="' + webinarKey + '" class="list_panelists">Panelists</a> | <a href="javascript:void(0);" data-webinarkey="' + webinarKey + '" class="list_registrants">Registrants</a> | <a href="javascript:void(0);" data-webinarkey="' + webinarKey + '" class="delete_webinar">Delete</a>';
+
+              var $tr = $('<tr>').append(
+                $('<td>').text(item.subject),
+                $('<td>').text(item.description),
+                $('<td>').text(startTime),
+                $('<td>').text(endTime),
+                $('<td>').html(link),
+                $('<td>').html(manageLinks),
+              ).appendTo('#webinarTable');
+
+            }
+          });
+
+          $('#loading').hide();
+          $("#webinars").show();
+        },
+        error: function (jqXHR, exception) {
+          var msg = '';
+          if (jqXHR.status === 0) {
+              msg = 'Not connect.\n Verify Network.';
+          } else if (jqXHR.status == 404) {
+              msg = 'Requested page not found. [404]';
+          } else if (jqXHR.status == 500) {
+              msg = 'Internal Server Error [500].';
+          } else if (exception === 'parsererror') {
+              msg = 'Requested JSON parse failed.';
+          } else if (exception === 'timeout') {
+              msg = 'Time out error.';
+          } else if (exception === 'abort') {
+              msg = 'Ajax request aborted.';
+          } else {
+              msg = 'Uncaught Error.\n' + jqXHR.responseText;
+          }
+          $('#loading').hide();
+          $( "#dialog" ).html(msg);
+          $( "#dialog" ).dialog();          
+        }
+      });
+
+    }
+
+    function createWebinar() {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      var subject = $("#subject").val();
+      var description = $("#description").val();
+      var startTime = $("#startTime").val();
+      var endTime = $("#startTime").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        //$( "#dialog" ).html("Please click Refresh Token to fetch needed tokens");
+        //$( "#dialog" ).dialog();
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars";
+
+      var url = server_base_url + "create_webinars";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+          "subject": subject,
+          "description": description,
+          "timeZone": "America/Los_Angeles",
+          "startTime": startTime,
+          "endTime": endTime
+        },
+        success: function (data) {
+          console.log("data ", data);
+
+          var webinarKey = data.webinarKey;
+          console.log("webinarKey", webinarKey);
+
+          if (webinarKey != "") {
+            //close model and refetch webinars
+            $("#subject").val("");
+            $("#description").val("");
+            $("#startTime").val("");
+
+            $('#myModalCreateWebinar').modal('hide');
+            $('#loading').show();
+            loadWebinars();
+          }
+
+        }
+      });
+      return false;
+    }
+
+    function deleteWebinar(webinarKey) {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/8511580501995731980
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey;
+
+      var url = server_base_url + "delete_webinars";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+        },
+        success: function (data) {
+          console.log("data ", data);
+          $('#loading').show();
+          loadWebinars();
+        }
+      });
+      return false;
+    }
+
+    /*********************
+    * Panelist Related 
+    *********************/
+
+    function loadPanelists(webinarKey) {
+
+      //delete existing ones
+      $("#panelistTable tr").remove();
+
+      $('#loadingPanelist').show();
+
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        //$( "#dialog" ).html("Please click Refresh Token to fetch needed tokens");
+        //$( "#dialog" ).dialog();
+        refreshAccessToken();
+      }
+
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/panelists
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/panelists";
+
+      var url = server_base_url + "get_panelists";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url
+        },
+        success: function (data) {
+          console.log("data ", data);
+          var panelistList = data;
+          console.log("panelistList length", panelistList.length);
+
+          var $trhead = $('<tr>').append('<th width="25%">Name</th><th width="25%">Email</th><th width="25%">Join Link</th><th width="25%">Manage</th></tr>').appendTo('#panelistTable');
+
+          $.each(panelistList, function (i, item) {
+
+            var panelistId = item.panelistId;
+            var link = '<a href="' + item.joinLink + '" target="_blank">Click Here</a>';
+
+            var manageLinks = '<a href="javascript:void(0);" data-panelistId="' + panelistId + '" class="delete_panelist">Delete</a>';
+
+            var $tr = $('<tr>').append(
+              $('<td>').text(item.name),
+              $('<td>').text(item.email),
+              $('<td>').html(link),
+              $('<td>').html(manageLinks),
+            ).appendTo('#panelistTable');
+            //console.log($tr.wrap('<p>').html());
+          });
+
+          $('#loadingPanelist').hide();
+
+        }
+      });
+
+    }
+
+    function createPanelist() {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      var name = $("#name_panelist").val();
+      var email = $("#email_panelist").val();
+      var webinarKey = $("#webinarKey_panelist").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/panelists
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/panelists";
+
+      var url = server_base_url + "create_panelists";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+          "name": name,
+          "email": email
+        },
+        success: function (data) {
+          console.log("data ", data);
+
+          var panelistKey = data.panelistKey;
+          console.log("panelistKey", panelistKey);
+
+          if (panelistKey != "") {
+            //close model and refetch webinars
+            $("#name_panelist").val("");
+            $("#email_panelist").val("");
+
+            $('#myModalCreatePanelists').modal('hide');
+
+            loadPanelists(webinarKey);
+            $('#webinarKey_panelist').val(webinarKey);
+            $('#myModalListPanelists').modal('show');
+
+          }
+
+        }
+      });
+      return false;
+    }
+
+    function deletePanelist(panelistId, webinarKey) {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/panelists/{{panelistKey}}
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/panelists/" + panelistId;
+
+      var url = server_base_url + "delete_panelists";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+        },
+        success: function (data) {
+          console.log("data ", data);
+          loadPanelists(webinarKey);
+          $('#webinarKey_panelist').val(webinarKey);
+          $('#myModalListPanelists').modal('show');
+        }
+      });
+      return false;
+    }
+
+    /*********************
+    * Registrant Related 
+    *********************/
+
+    function loadRegistrants(webinarKey) {
+
+      //delete existing ones
+      $("#registrantTable tr").remove();
+
+      $('#loadingRegistrant').show();
+
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        //$( "#dialog" ).html("Please click Refresh Token to fetch needed tokens");
+        //$( "#dialog" ).dialog();
+        refreshAccessToken();
+      }
+
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/registrants
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/registrants";
+
+      var url = server_base_url + "get_registrants";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url
+        },
+        success: function (data) {
+          console.log("data ", data);
+          var registrantList = data;
+          console.log("registrantList length", registrantList.length);
+
+          var $trhead = $('<tr>').append('<th width="15%">First Name</th><th width="15%">Last Name</th><th width="15%">Email</th><th width="20%">Registration Date</th><th width="15%">Join Link</th><th width="10%">Status</th><th width="10%">Manage</th></tr>').appendTo('#panelistTable');
+
+          $.each(registrantList, function (i, item) {
+
+            var registrantKey = item.registrantKey;
+            var link = '<a href="' + item.joinLink + '" target="_blank">Click Here</a>';
+
+            var manageLinks = '<a href="javascript:void(0);" data-registrantkey="' + registrantKey + '" class="delete_registrants">Delete</a>';
+
+            var $tr = $('<tr>').append(
+              $('<td>').text(item.firstName),
+              $('<td>').text(item.lastName),
+              $('<td>').text(item.email),
+              $('<td>').text(item.registrationDate),
+              $('<td>').html(link),
+              $('<td>').text(item.status),
+              $('<td>').html(manageLinks),
+            ).appendTo('#registrantTable');
+          });
+
+          $('#loadingRegistrant').hide();
+
+        }
+      });
+
+    }
+
+
+    function createRegistrant() {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      var first_name = $("#first_name_registrant").val();
+      var last_name = $("#last_name_registrant").val();
+      var email = $("#email_registrant").val();
+      var webinarKey = $("#webinarKey_registrant").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/registrants
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/registrants";
+
+      var url = server_base_url + "create_registrants";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+          "first_name": first_name,
+          "last_name": last_name,
+          "email": email
+        },
+        success: function (data) {
+          console.log("data ", data);
+
+          var registrantKey = data.registrantKey;
+          console.log("registrantKey", registrantKey);
+
+          if (registrantKey != "") {
+            //close model and refetch webinars
+            $("#first_name_registrant").val("");
+            $("#last_name_registrant").val("");
+            $("#email_registrant").val("");
+
+            $('#myModalCreateRegistrant').modal('hide');
+
+            loadRegistrants(webinarKey);
+            $('#webinarKey_registrant').val(webinarKey);
+            $('#myModalListRegistrant').modal('show');
+
+          }
+
+        }
+      });
+      return false;
+    }
+
+    function deleteRegistrant(registrantKey, webinarKey) {
+      var account_key = $("#account_key").val();
+      var organizer_key = $("#organizer_key").val();
+      var access_token = $("#access_token").val();
+
+      if (account_key == "" || organizer_key == "" || access_token == "") {
+        refreshAccessToken();
+      }
+      //{{baseURL}}/organizers/{{organizerKey}}/webinars/{{webinarKey}}/registrants/{{registrantKey}}
+      var goto_api_url = "https://api.getgo.com/G2W/rest/v2/organizers/" + organizer_key + "/webinars/" + webinarKey + "/registrants/" + registrantKey;
+
+      var url = server_base_url + "delete_registrants";
+      console.log("url to node", url);
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: {
+          "access_token": access_token,
+          "goto_api_url": goto_api_url,
+        },
+        success: function (data) {
+          console.log("data ", data);
+          loadRegistrants(webinarKey);
+          $('#webinarKey_registrant').val(webinarKey);
+          $('#myModalListRegistrant').modal('show');
+        }
+      });
+      return false;
+    }
+
+  </script>
+</body>
+
+</html>
